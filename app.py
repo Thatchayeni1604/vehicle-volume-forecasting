@@ -7,25 +7,27 @@ st.set_page_config(page_title="Vehicle Volume Forecasting", layout="centered")
 st.title("🚛 Commercial Vehicle Volume Forecasting")
 st.write("SARIMA-based time series forecasting")
 
-# Load dataset
+# Load data
 df = pd.read_csv("notebooks/ltruck_sales.csv", index_col=0)
-df.index = pd.to_datetime(df.index)   
-st.subheader("📊 Historical Sales")
-st.line_chart(df["sales"])
+df.index = pd.to_datetime(df.index)
 
-# Train SARIMA model
+sales_col = df.columns[0]   # ✅ auto-detect column
+
+st.subheader("📊 Historical Sales")
+st.line_chart(df[sales_col])
+
+# SARIMA model
 model = SARIMAX(
-    df["sales"],
+    df[sales_col],
     order=(1, 1, 1),
     seasonal_order=(1, 1, 1, 12)
 )
 model_fit = model.fit(disp=False)
 
-# Forecast
-months = st.slider("Forecast months", 1, 36, 12)
+months = st.slider("Forecast Months", 1, 36, 12)
 forecast = model_fit.forecast(steps=months)
 
-st.subheader("📈 Forecasted Vehicle Volume")
+st.subheader("📈 Forecast")
 st.line_chart(forecast)
 
 st.success("Forecast generated successfully!")
