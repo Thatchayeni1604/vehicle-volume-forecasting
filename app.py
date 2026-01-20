@@ -1,33 +1,33 @@
-import streamlit as st
 import pandas as pd
-import joblib
+import streamlit as st
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
-st.set_page_config(page_title="Vehicle Volume Forecast")
+st.set_page_config(page_title="Vehicle Volume Forecasting", layout="centered")
 
-model = joblib.load("model/sarima_model.pkl")
+st.title("🚛 Commercial Vehicle Volume Forecasting")
+st.write("SARIMA-based time series forecasting")
 
-st.title("🚛 Commercial Vehicle Sales Forecasting")
+# Load dataset
+df = pd.read_csv("notebooks/ltruck_sales.csv")
+df["date"] = pd.to_datetime(df["date"])
+df.set_index("date", inplace=True)
 
-months = st.slider("Months to Forecast", 1, 36, 12)
+st.subheader("📊 Historical Sales")
+st.line_chart(df["sales"])
 
-forecast = model.forecast(steps=months)
-
-future_dates = pd.date_range(
-    start=pd.Timestamp.today(),
-    periods=months,
-    freq="MS"
+# Train SARIMA model
+model = SARIMAX(
+    df["sales"],
+    order=(1, 1, 1),
+    seasonal_order=(1, 1, 1, 12)
 )
+model_fit = model.fit(disp=False)
 
-forecast_df = pd.DataFrame({
-    "Date": future_dates,
-    "Predicted Sales": forecast
-})
+# Forecast
+months = st.slider("Forecast months", 1, 36, 12)
+forecast = model_fit.forecast(steps=months)
 
-st.line_chart(forecast_df.set_index("Date"))
-st.dataframe(forecast_df)
-st.download_button(
-    label="Download Forecast as CSV",
-    data=forecast_df.to_csv(index=False).encode("utf-8"),
-    file_name="vehicle_sales_forecast.csv",
-    mime="text/csv"
-)
+st.subheader("📈 Forecast Output")
+st.line_chart(forecast)
+
+st.success("Forecast generated successfully!")
